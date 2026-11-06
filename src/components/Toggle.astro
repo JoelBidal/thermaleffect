@@ -1,0 +1,15 @@
+---
+interface Props {
+  name: string;
+  label: string;
+  scope?: 'setting' | 'export';
+  checked?: boolean;
+}
+const { name, label, scope = 'setting', checked = false } = Astro.props;
+const attr = scope === 'setting' ? { 'data-key': name } : { 'data-export': name };
+---
+
+<label class="field toggle">
+  <span class="field-label">{label}</span>
+  <input type="checkbox" role="switch" checked={checked} {...attr} />
+</label>

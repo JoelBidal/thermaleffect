@@ -1,0 +1,224 @@
+---
+import Range from '../components/Range.astro';
+import Segmented from '../components/Segmented.astro';
+import Toggle from '../components/Toggle.astro';
+import { FORMATS } from '../lib/export/frame';
+import { FONTS } from '../lib/thermal/fonts';
+import { PALETTES } from '../lib/thermal/palettes';
+import { MAX_CHARS, PLACEHOLDER } from '../lib/thermal/settings';
+import '../styles/global.css';
+
+const description = 'Type a word and give it an animated thermal effect made 100% with SVG filters. Download it as SVG, PNG or MP4.';
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preload" href="/fonts/PlusJakartaSans-800.ttf" as="fetch" crossorigin />
+    <title>Thermal Type</title>
+    <meta name="description" content={description} />
+    <meta property="og:title" content="Thermal Type" />
+    <meta property="og:description" content={description} />
+    <meta name="theme-color" content="#f5f5f4" />
+  </head>
+  <body>
+    <div class="app">
+      <main class="workspace">
+        <header class="topbar">
+          <span class="brand">
+            Thermal Type
+            <a class="credit" href="https://x.com/joelbidal5" target="_blank" rel="noopener">by @joelbidal5</a>
+          </span>
+          <nav class="topbar-actions">
+            <button type="button" class="link" id="copy-link">Copy link</button>
+            <button type="button" class="link" id="reset">Reset</button>
+          </nav>
+        </header>
+
+        <section class="stage" id="stage">
+          <div class="preview" id="preview"></div>
+        </section>
+
+        <label class="composer">
+          <span class="sr-only">Text</span>
+          <textarea
+            id="text"
+            rows="1"
+            placeholder={PLACEHOLDER}
+            maxlength={MAX_CHARS}
+            spellcheck="false"
+            autocomplete="off"
+            autofocus></textarea>
+        </label>
+      </main>
+
+      <aside class="panel" aria-label="Controls">
+        <div class="panel-scroll">
+          <section class="group">
+            <h2>Typography</h2>
+            <div class="field">
+              <span class="field-label" id="font-label">Font</span>
+              <div class="font-row">
+                <select data-key="fontId" aria-labelledby="font-label">
+                  {FONTS.map((f) => <option value={f.id}>{f.name}</option>)}
+                </select>
+                <button type="button" class="btn btn-icon" id="font-upload-btn" title="Upload font (.ttf, .otf, .woff)" aria-label="Upload font">
+                  <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 11V2.5M4.5 6 8 2.5 11.5 6M2.5 13.5h11" /></svg>
+                </button>
+                <input type="file" id="font-upload" accept=".ttf,.otf,.woff" hidden />
+              </div>
+            </div>
+            <Range name="letterSpacing" label="Letter spacing" min={-0.12} max={0.3} step={0.005} unit="em" decimals={3} />
+            <Range name="lineHeight" label="Line height" min={0.7} max={1.6} step={0.01} decimals={2} />
+            <Segmented
+              name="align"
+              label="Alignment"
+              options={[
+                { value: 'left', label: 'Left' },
+                { value: 'center', label: 'Center' },
+                { value: 'right', label: 'Right' },
+              ]}
+            />
+          </section>
+
+          <section class="group">
+            <h2>Animation</h2>
+            <Range name="duration" label="Cycle duration" min={1} max={12} step={0.1} unit="s" />
+            <Range name="angle" label="Angle" min={-90} max={90} step={1} unit="°" decimals={0} />
+            <Range name="stripe" label="Stripe width" min={150} max={1200} step={1} decimals={0} />
+            <Toggle name="reverse" label="Reverse direction" />
+          </section>
+
+          <section class="group">
+            <h2>Effect</h2>
+            <Range name="material" label="Depth" min={0} max={15} step={0.1} />
+            <Range name="glow" label="Glow" min={2} max={30} step={0.1} />
+            <Range name="glowStrength" label="Glow intensity" min={1} max={10} step={0.1} />
+            <Range name="softness" label="Softness" min={0} max={20} step={0.1} />
+            <Range name="grain" label="Grain" min={0} max={1} step={0.01} decimals={2} />
+          </section>
+
+          <section class="group">
+            <h2>Color</h2>
+            <div class="field">
+              <span class="field-row">
+                <span class="field-label">Preset</span>
+                <span class="value" id="palette-name"></span>
+              </span>
+              <div class="presets" role="radiogroup" aria-label="Presets">
+                {
+                  PALETTES.map((p) => (
+                    <button
+                      type="button"
+                      class="preset"
+                      role="radio"
+                      data-palette={p.id}
+                      data-name={p.name}
+                      title={p.name}
+                      aria-label={p.name}
+                      style={`--swatch: linear-gradient(135deg, ${p.stops.slice(0, 6).join(', ')})`}
+                    />
+                  ))
+                }
+              </div>
+            </div>
+            <div class="field">
+              <span class="field-label">Colors</span>
+              <div class="ramp">
+                {Array.from({ length: 7 }, (_, i) => (
+                  <button type="button" class="ramp-stop" data-stop={i} aria-label={i === 6 ? 'Background color' : `Color ${i + 1}`} />
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section class="group">
+            <h2>Export</h2>
+            <label class="field">
+              <span class="field-label">Format</span>
+              <select data-export="format">
+                {Object.entries(FORMATS).map(([value, f]) => <option value={value}>{f.name}</option>)}
+              </select>
+            </label>
+            <Segmented
+              name="resolution"
+              label="Resolution"
+              scope="export"
+              options={[
+                { value: '1080', label: '1080p' },
+                { value: '2160', label: '4K' },
+              ]}
+            />
+            <Segmented
+              name="fps"
+              label="Frame rate (MP4)"
+              scope="export"
+              options={[
+                { value: '30', label: '30 fps' },
+                { value: '60', label: '60 fps' },
+              ]}
+            />
+            <Segmented
+              name="cycles"
+              label="Loops (MP4)"
+              scope="export"
+              options={[
+                { value: '1', label: '1' },
+                { value: '2', label: '2' },
+                { value: '3', label: '3' },
+                { value: '5', label: '5' },
+              ]}
+            />
+            <Toggle name="background" label="Background (SVG, PNG)" scope="export" checked />
+          </section>
+        </div>
+
+        <div class="export-bar">
+          <div class="progress" id="progress" hidden>
+            <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+            <span id="progress-label">0%</span>
+            <button type="button" class="link" id="cancel">Cancel</button>
+          </div>
+          <div class="download" id="download">
+            <div class="menu" id="download-menu" role="menu" aria-labelledby="download-btn" hidden>
+              <button type="button" class="menu-item" role="menuitem" data-download="mp4">
+                <span>MP4</span><span class="menu-desc">Video loop</span>
+              </button>
+              <button type="button" class="menu-item" role="menuitem" data-download="svg">
+                <span>SVG</span><span class="menu-desc">Animated vector</span>
+              </button>
+              <button type="button" class="menu-item" role="menuitem" data-download="png">
+                <span>PNG</span><span class="menu-desc">Still frame</span>
+              </button>
+            </div>
+            <button
+              type="button"
+              class="btn btn-primary btn-download"
+              id="download-btn"
+              aria-haspopup="menu"
+              aria-expanded="false"
+              aria-controls="download-menu">
+              Download
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 9.5 8 6l3.5 3.5" /></svg>
+            </button>
+          </div>
+          <p class="status" id="status" role="status"></p>
+        </div>
+      </aside>
+    </div>
+
+    <div class="picker" id="picker" role="dialog" aria-label="Pick a color" hidden>
+      <hex-color-picker></hex-color-picker>
+      <div class="picker-row">
+        <span class="picker-hash" aria-hidden="true">#</span>
+        <input type="text" class="picker-hex" id="picker-hex" maxlength="7" spellcheck="false" autocomplete="off" aria-label="Hex color" />
+      </div>
+    </div>
+
+    <script>
+      import '../scripts/app';
+    </script>
+  </body>
+</html>

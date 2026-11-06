@@ -1,0 +1,25 @@
+---
+interface Props {
+  name: string;
+  label: string;
+  options: { value: string; label: string }[];
+  /** "setting" binds to Settings; "export" binds to the export options. */
+  scope?: 'setting' | 'export';
+}
+const { name, label, options, scope = 'setting' } = Astro.props;
+const attr = scope === 'setting' ? { 'data-key': name } : { 'data-export': name };
+---
+
+<fieldset class="field">
+  <legend class="field-label">{label}</legend>
+  <div class="segmented">
+    {
+      options.map((o) => (
+        <label>
+          <input type="radio" name={name} value={o.value} {...attr} />
+          <span>{o.label}</span>
+        </label>
+      ))
+    }
+  </div>
+</fieldset>
