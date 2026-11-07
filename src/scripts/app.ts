@@ -101,6 +101,11 @@ for (const el of $$<HTMLInputElement | HTMLSelectElement>('[data-key]')) {
 
 // ——— Text ———
 
+// The preview leaves room for the composer bar as it grows with more lines.
+new ResizeObserver(([entry]) => {
+  stage.style.setProperty('--bar-h', `${entry.borderBoxSize[0].blockSize}px`);
+}).observe($('.composer-bar'));
+
 function autosize() {
   textarea.rows = Math.min(MAX_LINES, Math.max(1, textarea.value.split('\n').length));
 }
@@ -243,21 +248,43 @@ function scheduleUrlSync() {
   urlTimer = window.setTimeout(() => history.replaceState(null, '', location.pathname + toQuery(settings)), 300);
 }
 
-$('#copy-link').addEventListener('click', async () => {
+const tipTimers = new WeakMap<HTMLElement, number>();
+
+/** Shows a short feedback tooltip above the button that triggered the action. */
+function flashTip(btn: HTMLElement, message: string) {
+  btn.dataset.tip = message;
+  btn.classList.add('show-tip');
+  clearTimeout(tipTimers.get(btn));
+  tipTimers.set(btn, window.setTimeout(() => btn.classList.remove('show-tip'), 1600));
+  liveRegion.textContent = message;
+}
+
+// Announces tooltip messages to screen readers.
+const liveRegion = Object.assign(document.createElement('span'), { className: 'sr-only' });
+liveRegion.setAttribute('role', 'status');
+document.body.append(liveRegion);
+
+const copyBtn = $<HTMLButtonElement>('#copy-link');
+copyBtn.addEventListener('click', async () => {
   const url = location.origin + location.pathname + toQuery(settings);
   try {
     await navigator.clipboard.writeText(url);
-    showStatus(settings.fontId.startsWith('custom-') ? 'Link copied (without the uploaded font).' : 'Link copied.');
+    flashTip(copyBtn, settings.fontId.startsWith('custom-') ? 'Link copied (without the uploaded font)' : 'Link copied');
   } catch {
-    showStatus('Couldn’t copy the link.', true);
+    flashTip(copyBtn, 'Couldn’t copy the link');
   }
 });
 
-$('#reset').addEventListener('click', () => {
+const resetBtn = $<HTMLButtonElement>('#reset');
+resetBtn.addEventListener('click', () => {
   settings = { ...DEFAULTS, palette: [...DEFAULTS.palette], text: settings.text };
   closePicker();
   syncControls();
   render();
+  resetBtn.classList.remove('is-spinning');
+  void resetBtn.offsetWidth; // restart the animation
+  resetBtn.classList.add('is-spinning');
+  flashTip(resetBtn, 'Settings reset');
 });
 
 // ——— Export ———

@@ -76,66 +76,25 @@ textarea {
 .app {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 272px;
+  gap: 12px;
   height: 100dvh;
+  padding: 12px;
 }
 
 .workspace {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 14px 12px 16px 20px;
   min-width: 0;
-}
-
-.topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  height: 24px;
-}
-
-.brand {
-  font-weight: 700;
-  font-size: 13px;
-  letter-spacing: -0.01em;
-}
-
-.credit {
-  margin-left: 6px;
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0;
-  text-decoration: none;
-  transition: color 0.15s ease;
-}
-
-.credit:hover {
-  color: var(--ink);
-}
-
-.topbar-actions {
-  display: flex;
-  gap: 14px;
-}
-
-.topbar-actions .link {
-  color: var(--muted);
-  text-decoration: none;
-}
-
-.topbar-actions .link:hover {
-  color: var(--ink);
 }
 
 /* ——— Stage ——— */
 
 .stage {
   --paper: #ffffff;
+  --bar-bottom: calc(16px + 2%);
   position: relative;
   flex: 1;
-  min-height: 220px;
+  min-height: 260px;
   background: var(--paper);
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -143,9 +102,11 @@ textarea {
   transition: background-color 0.3s ease;
 }
 
+/* Leaves room at the bottom for the composer bar (--bar-h is set from JS). */
 .preview {
   position: absolute;
-  inset: 4%;
+  inset: 4% 4% calc(var(--bar-h, 42px) + var(--bar-bottom) + 20px);
+  transition: bottom 0.2s ease;
 }
 
 .preview svg {
@@ -159,34 +120,125 @@ textarea {
 
 /* ——— Composer ——— */
 
-.composer {
-  display: block;
-  background: var(--surface);
+/* Grouped like the segmented controls: a gray track holding the input and actions. */
+.composer-bar {
+  position: absolute;
+  left: 50%;
+  bottom: var(--bar-bottom);
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  width: min(560px, calc(100% - 32px));
+  padding: 3px;
+  background: var(--field);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  transition: border-color 0.15s ease;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 0.06);
+  transform: translateX(-50%);
+}
+
+.composer {
+  flex: 1;
+  min-width: 0;
+  display: block;
+  margin-right: 2px;
+  background: var(--surface);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 0 0 1px var(--line-strong);
+  transition: box-shadow 0.15s ease;
 }
 
 .composer:focus-within {
-  border-color: var(--ink);
+  box-shadow:
+    0 0 0 1px #b4b4b1,
+    0 0 0 3px rgb(0 0 0 / 0.04);
 }
 
 .composer textarea {
   display: block;
   width: 100%;
-  padding: 12px 16px;
+  padding: 7px 11px;
   border: 0;
   background: transparent;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
   letter-spacing: -0.01em;
-  line-height: 1.35;
+  line-height: 20px;
   resize: none;
   outline: none;
 }
 
 .composer textarea::placeholder {
   color: var(--muted);
+}
+
+.bar-btn {
+  position: relative;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--muted);
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.bar-btn:hover {
+  background: rgb(0 0 0 / 0.04);
+  color: var(--ink);
+}
+
+.bar-btn svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.bar-btn.is-spinning svg {
+  animation: spin-back 0.5s ease;
+}
+
+@keyframes spin-back {
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+/* Feedback tooltip shown above the button that triggered it. */
+.bar-btn::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 10px);
+  padding: 5px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--ink);
+  color: var(--surface);
+  font-size: 11px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, 4px);
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
+}
+
+.bar-btn.show-tip::after {
+  opacity: 1;
+  transform: translate(-50%, 0);
 }
 
 /* ——— Panel ——— */
@@ -196,13 +248,51 @@ textarea {
   flex-direction: column;
   min-height: 0;
   background: var(--surface);
-  border-left: 1px solid var(--line);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: clip;
 }
 
 .panel-scroll {
   flex: 1;
   overflow-y: auto;
   overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+
+.panel-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* About note at the very end of the sidebar. */
+.about {
+  padding: 16px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.about p {
+  margin: 0;
+}
+
+.about .about-title {
+  margin-bottom: 4px;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: -0.005em;
+}
+
+.about a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--line-strong);
+  text-underline-offset: 2px;
+  transition: color 0.15s ease;
+}
+
+.about a:hover {
+  color: var(--ink);
 }
 
 .group {
@@ -210,10 +300,6 @@ textarea {
   gap: 12px;
   padding: 16px;
   border-bottom: 1px solid var(--line);
-}
-
-.group:last-child {
-  border-bottom: 0;
 }
 
 .group h2 {
@@ -732,19 +818,10 @@ select {
     height: auto;
   }
 
-  .workspace {
-    padding: 12px 16px 16px;
-  }
-
   .stage {
     flex: none;
-    height: 38vh;
-    min-height: 200px;
-  }
-
-  .panel {
-    border-left: 0;
-    border-top: 1px solid var(--line);
+    height: 48vh;
+    min-height: 300px;
   }
 
   .panel-scroll {
@@ -754,5 +831,27 @@ select {
   .export-bar {
     position: sticky;
     bottom: 0;
+  }
+}
+
+/* Icon-only bar buttons on small screens. */
+@media (max-width: 520px) {
+  .composer-bar {
+    width: calc(100% - 24px);
+  }
+
+  .bar-btn {
+    width: 34px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .bar-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
   }
 }

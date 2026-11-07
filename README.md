@@ -1,4 +1,4 @@
-# Thermal Type
+# Thermal Effect
 
 A web tool that applies an animated thermal effect to any text, made 100% with SVG filters. Exports to SVG (animated with SMIL), PNG and MP4.
 
